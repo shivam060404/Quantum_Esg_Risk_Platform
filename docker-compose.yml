@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # Backend FastAPI service with quantum computing
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:1234@postgres:5432/esg_platform
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend:/app
+    networks:
+      - esg-network
+
+  # Frontend React/Next.js service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_BLOCKCHAIN_RPC=${BLOCKCHAIN_RPC_URL}
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - esg-network
+
+  # PostgreSQL database with TimescaleDB extension
+  postgres:
+    image: timescale/timescaledb:latest-pg14
+    environment:
+      - POSTGRES_DB=esg_platform
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1234
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - esg-network
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - esg-network
+
+  # Blockchain node (Ganache for development)
+  blockchain:
+    image: trufflesuite/ganache:latest
+    ports:
+      - "8545:8545"
+    command: >
+      --deterministic
+      --accounts 10
+      --host 0.0.0.0
+      --port 8545
+      --networkId 1337
+    networks:
+      - esg-network
+
+  # AI Agents service
+  ai-agents:
+    build:
+      context: ./ai-agents
+      dockerfile: Dockerfile
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/esg_platform
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./ai-agents:/app
+    networks:
+      - esg-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  esg-network:
+    driver: bridge

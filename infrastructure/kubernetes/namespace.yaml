@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: esg-platform
+  labels:
+    name: esg-platform
+    environment: production
+    app.kubernetes.io/name: esg-risk-assessment
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/part-of: esg-platform
+    app.kubernetes.io/managed-by: kubernetes
+  annotations:
+    description: "Quantum-Enhanced ESG Risk Assessment Platform"
+    contact: "platform-team@esg-platform.com"
+    cost-center: "engineering"
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: esg-platform-quota
+  namespace: esg-platform
+spec:
+  hard:
+    requests.cpu: "20"
+    requests.memory: 40Gi
+    limits.cpu: "40"
+    limits.memory: 80Gi
+    persistentvolumeclaims: "10"
+    pods: "50"
+    services: "20"
+    secrets: "30"
+    configmaps: "30"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: esg-platform-limits
+  namespace: esg-platform
+spec:
+  limits:
+  - default:
+      cpu: "1"
+      memory: "2Gi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "256Mi"
+    type: Container
+  - max:
+      cpu: "4"
+      memory: "8Gi"
+    min:
+      cpu: "50m"
+      memory: "128Mi"
+    type: Container
