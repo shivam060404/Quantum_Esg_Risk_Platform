@@ -44,6 +44,3 @@ A comprehensive ESG risk assessment platform combining quantum computing, blockc
 - **Real-Time Climate Risk Assessment**
 - **Interactive Quantum Visualizations**
 
-## License
-
-MIT License - see LICENSE file for details
